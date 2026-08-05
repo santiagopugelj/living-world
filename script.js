@@ -70,7 +70,8 @@ function createWorld() {
     height: 20,
     speed: 120,
     targetX: 0,
-    targetY: 0
+    targetY: 0,
+    waitTime: 0
   };
 
   npc.targetX = Math.random() * (world.width - npc.width);
@@ -135,6 +136,18 @@ function updateNpc(deltaTime) {
     return;
   }
 
+  if (npc.waitTime > 0) {
+    npc.waitTime -= deltaTime;
+
+    if (npc.waitTime <= 0) {
+      npc.waitTime = 0;
+      npc.targetX = Math.random() * (world.width - npc.width);
+      npc.targetY = Math.random() * (world.height - npc.height);
+    }
+
+    return;
+  }
+
   const dx = npc.targetX - npc.x;
   const dy = npc.targetY - npc.y;
   const distanceToTarget = Math.hypot(dx, dy);
@@ -142,8 +155,7 @@ function updateNpc(deltaTime) {
   if (distanceToTarget <= 1) {
     npc.x = npc.targetX;
     npc.y = npc.targetY;
-    npc.targetX = Math.random() * (world.width - npc.width);
-    npc.targetY = Math.random() * (world.height - npc.height);
+    npc.waitTime = 2 + Math.random() * 4;
     return;
   }
 

@@ -1,5 +1,10 @@
 # CHANGELOG - Living World
 
+## v0.4 - 2026-08-05
+
+- NPCs now pause before choosing a new destination
+- Improved the feeling of autonomous movement
+
 ## v0.3 - 2026-08-05
 
 - Added the first NPC
