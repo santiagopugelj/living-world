@@ -1,5 +1,11 @@
 # CHANGELOG - Living World
 
+## v0.3 - 2026-08-05
+
+- Added the first NPC
+- NPCs now continuously walk toward random destinations
+- Introduced the first autonomous behavior in the world
+
 ## v0.2 - 2026-08-05
 
 - Added player movement

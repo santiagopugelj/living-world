@@ -61,6 +61,21 @@ function createWorld() {
     height: 24,
     speed: 220
   });
+
+  const npc = {
+    type: "npc",
+    x: Math.random() * world.width,
+    y: Math.random() * world.height,
+    width: 20,
+    height: 20,
+    speed: 120,
+    targetX: 0,
+    targetY: 0
+  };
+
+  npc.targetX = Math.random() * (world.width - npc.width);
+  npc.targetY = Math.random() * (world.height - npc.height);
+  world.entities.push(npc);
 }
 
 function updatePlayer(deltaTime) {
@@ -113,6 +128,32 @@ function updateCamera() {
   world.camera.y = clamp(player.y + player.height / 2 - canvas.height / 2, 0, maxCameraY);
 }
 
+function updateNpc(deltaTime) {
+  const npc = world.entities.find((entity) => entity.type === "npc");
+
+  if (!npc) {
+    return;
+  }
+
+  const dx = npc.targetX - npc.x;
+  const dy = npc.targetY - npc.y;
+  const distanceToTarget = Math.hypot(dx, dy);
+
+  if (distanceToTarget <= 1) {
+    npc.x = npc.targetX;
+    npc.y = npc.targetY;
+    npc.targetX = Math.random() * (world.width - npc.width);
+    npc.targetY = Math.random() * (world.height - npc.height);
+    return;
+  }
+
+  const moveDistance = Math.min(distanceToTarget, npc.speed * deltaTime);
+  npc.x += (dx / distanceToTarget) * moveDistance;
+  npc.y += (dy / distanceToTarget) * moveDistance;
+  npc.x = clamp(npc.x, 0, world.width - npc.width);
+  npc.y = clamp(npc.y, 0, world.height - npc.height);
+}
+
 function drawEntity(entity) {
   const screenX = entity.x - world.camera.x;
   const screenY = entity.y - world.camera.y;
@@ -127,6 +168,9 @@ function drawEntity(entity) {
     context.fillRect(screenX, screenY, entity.width, entity.height);
   } else if (entity.type === "player") {
     context.fillStyle = "#2f5cff";
+    context.fillRect(screenX, screenY, entity.width, entity.height);
+  } else if (entity.type === "npc") {
+    context.fillStyle = "#f2d53c";
     context.fillRect(screenX, screenY, entity.width, entity.height);
   }
 }
@@ -148,6 +192,7 @@ function gameLoop(timestamp) {
   lastFrameTime = timestamp;
 
   updatePlayer(deltaTime);
+  updateNpc(deltaTime);
   updateCamera();
   renderWorld();
   requestAnimationFrame(gameLoop);
