@@ -23,6 +23,42 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function isColliding(entityA, entityB) {
+  return (
+    entityA.x < entityB.x + entityB.width &&
+    entityA.x + entityA.width > entityB.x &&
+    entityA.y < entityB.y + entityB.height &&
+    entityA.y + entityA.height > entityB.y
+  );
+}
+
+function isBlockedByObstacle(entity, world) {
+  return world.entities.some((candidate) => {
+    if (candidate === entity || (candidate.type !== "tree" && candidate.type !== "rock")) {
+      return false;
+    }
+
+    return isColliding(entity, candidate);
+  });
+}
+
+function moveEntityWithCollision(entity, targetX, targetY, world) {
+  const originalX = entity.x;
+  const originalY = entity.y;
+
+  entity.x = clamp(targetX, 0, world.width - entity.width);
+
+  if (isBlockedByObstacle(entity, world)) {
+    entity.x = originalX;
+  }
+
+  entity.y = clamp(targetY, 0, world.height - entity.height);
+
+  if (isBlockedByObstacle(entity, world)) {
+    entity.y = originalY;
+  }
+}
+
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -38,8 +74,8 @@ function createWorld() {
       type: "tree",
       x: Math.random() * world.width,
       y: Math.random() * world.height,
-      width: 20,
-      height: 20
+      width: 56,
+      height: 56
     });
   }
 
@@ -48,8 +84,8 @@ function createWorld() {
       type: "rock",
       x: Math.random() * world.width,
       y: Math.random() * world.height,
-      width: 16,
-      height: 16
+      width: 24,
+      height: 24
     });
   }
 
@@ -107,12 +143,13 @@ function updatePlayer(deltaTime) {
     moveX /= length;
     moveY /= length;
 
-    player.x += moveX * player.speed * deltaTime;
-    player.y += moveY * player.speed * deltaTime;
+    moveEntityWithCollision(
+      player,
+      player.x + moveX * player.speed * deltaTime,
+      player.y + moveY * player.speed * deltaTime,
+      world
+    );
   }
-
-  player.x = clamp(player.x, 0, world.width - player.width);
-  player.y = clamp(player.y, 0, world.height - player.height);
 }
 
 function updateCamera() {
@@ -160,10 +197,10 @@ function updateNpc(deltaTime) {
   }
 
   const moveDistance = Math.min(distanceToTarget, npc.speed * deltaTime);
-  npc.x += (dx / distanceToTarget) * moveDistance;
-  npc.y += (dy / distanceToTarget) * moveDistance;
-  npc.x = clamp(npc.x, 0, world.width - npc.width);
-  npc.y = clamp(npc.y, 0, world.height - npc.height);
+  const nextX = npc.x + (dx / distanceToTarget) * moveDistance;
+  const nextY = npc.y + (dy / distanceToTarget) * moveDistance;
+
+  moveEntityWithCollision(npc, nextX, nextY, world);
 }
 
 function drawEntity(entity) {
@@ -249,3 +286,10 @@ window.addEventListener("load", () => {
   resizeCanvas();
   gameLoop(0);
 });
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    isColliding,
+    moveEntityWithCollision
+  };
+}

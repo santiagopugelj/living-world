@@ -1,5 +1,13 @@
 # CHANGELOG - Living World
 
+## v0.5 - 2026-08-06
+
+- Increased tree size to improve world scale
+- Increased rock size
+- Added collision detection for the player
+- Added collision detection for NPCs
+- World obstacles are now solid
+
 ## v0.4 - 2026-08-05
 
 - NPCs now pause before choosing a new destination
