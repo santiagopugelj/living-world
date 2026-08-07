@@ -1,5 +1,10 @@
 # CHANGELOG - Living World
 
+## v0.8 - 2026-08-07
+
+- NPCs now move between trees instead of random locations
+- NPCs now have a simple world-oriented purpose
+
 ## v0.7 - 2026-08-07
 
 - NPCs can now detect when they are stuck

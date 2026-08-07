@@ -137,8 +137,7 @@ function createWorld() {
     stuckTime: 0
   };
 
-  npc.targetX = Math.random() * (world.width - npc.width);
-  npc.targetY = Math.random() * (world.height - npc.height);
+  chooseTreeDestination(npc);
   world.entities.push(npc);
 }
 
@@ -193,9 +192,21 @@ function updateCamera() {
   world.camera.y = clamp(player.y + player.height / 2 - canvas.height / 2, 0, maxCameraY);
 }
 
-function chooseNpcDestination(npc) {
-  npc.targetX = Math.random() * (world.width - npc.width);
-  npc.targetY = Math.random() * (world.height - npc.height);
+function chooseTreeDestination(npc) {
+  const trees = world.entities.filter((entity) => entity.type === "tree");
+
+  if (trees.length === 0) {
+    npc.targetX = Math.random() * (world.width - npc.width);
+    npc.targetY = Math.random() * (world.height - npc.height);
+    return;
+  }
+
+  const currentTree = trees.find((tree) => tree.x === npc.targetX && tree.y === npc.targetY);
+  const candidates = currentTree && trees.length > 1 ? trees.filter((tree) => tree !== currentTree) : trees;
+  const nextTree = candidates[Math.floor(Math.random() * candidates.length)];
+
+  npc.targetX = nextTree.x;
+  npc.targetY = nextTree.y;
 }
 
 function updateNpc(deltaTime) {
@@ -210,7 +221,7 @@ function updateNpc(deltaTime) {
 
     if (npc.waitTime <= 0) {
       npc.waitTime = 0;
-      chooseNpcDestination(npc);
+      chooseTreeDestination(npc);
       npc.stuckTime = 0;
     }
 
@@ -248,7 +259,7 @@ function updateNpc(deltaTime) {
   if (npc.stuckTime >= 2) {
     npc.stuckTime = 0;
     npc.waitTime = 0.5 + Math.random();
-    chooseNpcDestination(npc);
+    chooseTreeDestination(npc);
   }
 }
 
