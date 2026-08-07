@@ -133,7 +133,8 @@ function createWorld() {
     speed: 120,
     targetX: 0,
     targetY: 0,
-    waitTime: 0
+    waitTime: 0,
+    stuckTime: 0
   };
 
   npc.targetX = Math.random() * (world.width - npc.width);
@@ -192,6 +193,11 @@ function updateCamera() {
   world.camera.y = clamp(player.y + player.height / 2 - canvas.height / 2, 0, maxCameraY);
 }
 
+function chooseNpcDestination(npc) {
+  npc.targetX = Math.random() * (world.width - npc.width);
+  npc.targetY = Math.random() * (world.height - npc.height);
+}
+
 function updateNpc(deltaTime) {
   const npc = world.entities.find((entity) => entity.type === "npc");
 
@@ -204,8 +210,8 @@ function updateNpc(deltaTime) {
 
     if (npc.waitTime <= 0) {
       npc.waitTime = 0;
-      npc.targetX = Math.random() * (world.width - npc.width);
-      npc.targetY = Math.random() * (world.height - npc.height);
+      chooseNpcDestination(npc);
+      npc.stuckTime = 0;
     }
 
     return;
@@ -219,14 +225,31 @@ function updateNpc(deltaTime) {
     npc.x = npc.targetX;
     npc.y = npc.targetY;
     npc.waitTime = 2 + Math.random() * 4;
+    npc.stuckTime = 0;
     return;
   }
 
   const moveDistance = Math.min(distanceToTarget, npc.speed * deltaTime);
   const nextX = npc.x + (dx / distanceToTarget) * moveDistance;
   const nextY = npc.y + (dy / distanceToTarget) * moveDistance;
+  const previousX = npc.x;
+  const previousY = npc.y;
 
   moveEntityWithCollision(npc, nextX, nextY, world);
+
+  const actualMovement = Math.hypot(npc.x - previousX, npc.y - previousY);
+
+  if (actualMovement < 0.5) {
+    npc.stuckTime += deltaTime;
+  } else {
+    npc.stuckTime = 0;
+  }
+
+  if (npc.stuckTime >= 2) {
+    npc.stuckTime = 0;
+    npc.waitTime = 0.5 + Math.random();
+    chooseNpcDestination(npc);
+  }
 }
 
 function drawEntity(entity) {

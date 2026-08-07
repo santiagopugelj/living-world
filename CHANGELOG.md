@@ -1,5 +1,10 @@
 # CHANGELOG - Living World
 
+## v0.7 - 2026-08-07
+
+- NPCs can now detect when they are stuck
+- Stuck NPCs automatically choose a new destination
+
 ## v0.6 - 2026-08-06
 
 - Prevented trees and rocks from overlapping during world generation
