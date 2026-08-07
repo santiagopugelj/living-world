@@ -1,5 +1,11 @@
 # CHANGELOG - Living World
 
+## v0.6 - 2026-08-06
+
+- Prevented trees and rocks from overlapping during world generation
+- Improved rock colors
+- Added subtle random size variation to world objects
+
 ## v0.5 - 2026-08-06
 
 - Increased tree size to improve world scale

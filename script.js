@@ -8,8 +8,8 @@ const world = {
   entities: []
 };
 
-const canvas = document.getElementById("worldCanvas");
-const context = canvas.getContext("2d");
+const canvas = typeof document !== "undefined" ? document.getElementById("worldCanvas") : null;
+const context = canvas ? canvas.getContext("2d") : null;
 const input = {
   w: false,
   a: false,
@@ -21,6 +21,10 @@ let lastFrameTime = 0;
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function randomBetween(min, max) {
+  return min + Math.random() * (max - min);
 }
 
 function isColliding(entityA, entityB) {
@@ -60,33 +64,55 @@ function moveEntityWithCollision(entity, targetX, targetY, world) {
 }
 
 function resizeCanvas() {
+  if (!canvas) {
+    return;
+  }
+
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   lastFrameTime = 0;
   createWorld();
 }
 
+function createEntityAtFreePosition(type, width, height, targetWorld) {
+  let x = 0;
+  let y = 0;
+  let placed = false;
+
+  while (!placed) {
+    x = Math.random() * targetWorld.width;
+    y = Math.random() * targetWorld.height;
+
+    const candidate = {
+      type,
+      x,
+      y,
+      width,
+      height
+    };
+
+    const overlap = targetWorld.entities.some((entity) => isColliding(candidate, entity));
+
+    if (!overlap) {
+      placed = true;
+      return candidate;
+    }
+  }
+}
+
 function createWorld() {
   world.entities = [];
 
   for (let i = 0; i < 20; i += 1) {
-    world.entities.push({
-      type: "tree",
-      x: Math.random() * world.width,
-      y: Math.random() * world.height,
-      width: 56,
-      height: 56
-    });
+    const treeSize = randomBetween(56 - 2, 56 + 2);
+    const tree = createEntityAtFreePosition("tree", treeSize, treeSize, world);
+    world.entities.push(tree);
   }
 
   for (let i = 0; i < 10; i += 1) {
-    world.entities.push({
-      type: "rock",
-      x: Math.random() * world.width,
-      y: Math.random() * world.height,
-      width: 24,
-      height: 24
-    });
+    const rockSize = randomBetween(24 - 2, 24 + 2);
+    const rock = createEntityAtFreePosition("rock", rockSize, rockSize, world);
+    world.entities.push(rock);
   }
 
   world.entities.push({
@@ -213,7 +239,7 @@ function drawEntity(entity) {
     context.fillStyle = "#2d5a16";
     context.fillRect(screenX + 6, screenY + 6, 8, 8);
   } else if (entity.type === "rock") {
-    context.fillStyle = "#7a7a7a";
+    context.fillStyle = "#8C8888";
     context.fillRect(screenX, screenY, entity.width, entity.height);
   } else if (entity.type === "player") {
     context.fillStyle = "#2f5cff";
@@ -225,6 +251,10 @@ function drawEntity(entity) {
 }
 
 function renderWorld() {
+  if (!context || !canvas) {
+    return;
+  }
+
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = "#7fbf7f";
   context.fillRect(0, 0, canvas.width, canvas.height);
@@ -279,16 +309,19 @@ function handleKeyUp(event) {
   }
 }
 
-window.addEventListener("resize", resizeCanvas);
-window.addEventListener("keydown", handleKeyDown);
-window.addEventListener("keyup", handleKeyUp);
-window.addEventListener("load", () => {
-  resizeCanvas();
-  gameLoop(0);
-});
+if (typeof window !== "undefined") {
+  window.addEventListener("resize", resizeCanvas);
+  window.addEventListener("keydown", handleKeyDown);
+  window.addEventListener("keyup", handleKeyUp);
+  window.addEventListener("load", () => {
+    resizeCanvas();
+    gameLoop(0);
+  });
+}
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
+    createEntityAtFreePosition,
     isColliding,
     moveEntityWithCollision
   };
