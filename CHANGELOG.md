@@ -1,5 +1,10 @@
 # CHANGELOG - Living World
 
+## v0.9 - 2026-08-07
+
+- NPCs now choose nearby trees instead of random trees
+- Improved the realism of NPC decision making
+
 ## v0.8 - 2026-08-07
 
 - NPCs now move between trees instead of random locations

@@ -201,12 +201,17 @@ function chooseTreeDestination(npc) {
     return;
   }
 
-  const currentTree = trees.find((tree) => tree.x === npc.targetX && tree.y === npc.targetY);
-  const candidates = currentTree && trees.length > 1 ? trees.filter((tree) => tree !== currentTree) : trees;
-  const nextTree = candidates[Math.floor(Math.random() * candidates.length)];
+  const treesWithDistance = trees.map((tree) => ({
+    tree,
+    distance: Math.hypot(tree.x - npc.x, tree.y - npc.y)
+  }));
 
-  npc.targetX = nextTree.x;
-  npc.targetY = nextTree.y;
+  treesWithDistance.sort((a, b) => a.distance - b.distance);
+  const nearest = treesWithDistance.slice(0, Math.min(3, treesWithDistance.length));
+  const choice = nearest[Math.floor(Math.random() * nearest.length)].tree;
+
+  npc.targetX = choice.x;
+  npc.targetY = choice.y;
 }
 
 function updateNpc(deltaTime) {
