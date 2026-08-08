@@ -5,11 +5,13 @@ const world = {
     x: 0,
     y: 0
   },
-  entities: []
+  entities: [],
+  wood: 0
 };
 
 const canvas = typeof document !== "undefined" ? document.getElementById("worldCanvas") : null;
 const context = canvas ? canvas.getContext("2d") : null;
+const woodCounter = typeof document !== "undefined" ? document.getElementById("woodCounter") : null;
 const input = {
   w: false,
   a: false,
@@ -25,6 +27,57 @@ function clamp(value, min, max) {
 
 function randomBetween(min, max) {
   return min + Math.random() * (max - min);
+}
+
+function getPlayer() {
+  return world.entities.find((entity) => entity.type === "player");
+}
+
+function getNearestTreeInRange(player, range = 48) {
+  let nearestTree = null;
+  let nearestDistance = Infinity;
+
+  world.entities.forEach((entity) => {
+    if (entity.type !== "tree") {
+      return;
+    }
+
+    const dx = player.x + player.width / 2 - (entity.x + entity.width / 2);
+    const dy = player.y + player.height / 2 - (entity.y + entity.height / 2);
+    const distance = Math.hypot(dx, dy);
+
+    if (distance <= range && distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestTree = entity;
+    }
+  });
+
+  return nearestTree;
+}
+
+function gatherWoodFromTree() {
+  const player = getPlayer();
+
+  if (!player) {
+    return false;
+  }
+
+  const tree = getNearestTreeInRange(player);
+
+  if (!tree) {
+    return false;
+  }
+
+  world.entities = world.entities.filter((entity) => entity !== tree);
+  world.wood += 1;
+  updateWoodCounter();
+  return true;
+}
+
+function updateWoodCounter() {
+  if (woodCounter) {
+    woodCounter.textContent = `Wood: ${world.wood}`;
+  }
 }
 
 function isColliding(entityA, entityB) {
@@ -102,6 +155,7 @@ function createEntityAtFreePosition(type, width, height, targetWorld) {
 
 function createWorld() {
   world.entities = [];
+  world.wood = 0;
 
   for (let i = 0; i < 20; i += 1) {
     const treeSize = randomBetween(56 - 2, 56 + 2);
@@ -139,6 +193,7 @@ function createWorld() {
 
   chooseTreeDestination(npc);
   world.entities.push(npc);
+  updateWoodCounter();
 }
 
 function updatePlayer(deltaTime) {
@@ -331,6 +386,9 @@ function handleKeyDown(event) {
   } else if (key === "d") {
     input.d = true;
     event.preventDefault();
+  } else if (key === "e") {
+    gatherWoodFromTree();
+    event.preventDefault();
   }
 }
 
@@ -362,6 +420,8 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     createEntityAtFreePosition,
     isColliding,
-    moveEntityWithCollision
+    moveEntityWithCollision,
+    gatherWoodFromTree,
+    world
   };
 }

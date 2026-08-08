@@ -1,5 +1,11 @@
 # CHANGELOG - Living World
 
+## v0.10 - 2026-08-08
+
+- Added the first player resource interaction
+- Players can now gather wood from trees
+- Added a basic wood counter
+
 ## v0.9 - 2026-08-07
 
 - NPCs now choose nearby trees instead of random trees
