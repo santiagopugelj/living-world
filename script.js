@@ -1,3 +1,6 @@
+const GATHER_RANGE = 48;
+const GATHER_TIME = 2;
+
 const world = {
   width: 2000,
   height: 2000,
@@ -6,7 +9,8 @@ const world = {
     y: 0
   },
   entities: [],
-  wood: 0
+  wood: 0,
+  gathering: null
 };
 
 const canvas = typeof document !== "undefined" ? document.getElementById("worldCanvas") : null;
@@ -55,23 +59,66 @@ function getNearestTreeInRange(player, range = 48) {
   return nearestTree;
 }
 
-function gatherWoodFromTree() {
-  const player = getPlayer();
+function getTreeAtWorldPosition(x, y) {
+  return world.entities.find(
+    (entity) => entity.type === "tree" && x >= entity.x && x <= entity.x + entity.width && y >= entity.y && y <= entity.y + entity.height
+  );
+}
 
-  if (!player) {
-    return false;
+function startGathering(tree) {
+  if (world.gathering) {
+    return;
   }
 
-  const tree = getNearestTreeInRange(player);
+  world.gathering = {
+    tree,
+    elapsedTime: 0
+  };
+}
 
-  if (!tree) {
-    return false;
+function cancelGathering() {
+  world.gathering = null;
+}
+
+function completeGathering() {
+  if (!world.gathering) {
+    return;
   }
 
+  const tree = world.gathering.tree;
   world.entities = world.entities.filter((entity) => entity !== tree);
   world.wood += 1;
   updateWoodCounter();
-  return true;
+  world.gathering = null;
+}
+
+function updateGathering(deltaTime) {
+  if (!world.gathering) {
+    return;
+  }
+
+  const player = getPlayer();
+
+  if (!player) {
+    cancelGathering();
+    return;
+  }
+
+  const tree = world.gathering.tree;
+  const dx = player.x + player.width / 2 - (tree.x + tree.width / 2);
+  const dy = player.y + player.height / 2 - (tree.y + tree.height / 2);
+  const distance = Math.hypot(dx, dy);
+
+  if (distance > GATHER_RANGE) {
+    cancelGathering();
+    return;
+  }
+
+  world.gathering.elapsedTime += deltaTime;
+
+  if (world.gathering.elapsedTime >= GATHER_TIME) {
+    completeGathering();
+  }
 }
 
 function updateWoodCounter() {
@@ -156,6 +203,7 @@ function createEntityAtFreePosition(type, width, height, targetWorld) {
 function createWorld() {
   world.entities = [];
   world.wood = 0;
+  world.gathering = null;
 
   for (let i = 0; i < 20; i += 1) {
     const treeSize = randomBetween(56 - 2, 56 + 2);
@@ -365,6 +413,7 @@ function gameLoop(timestamp) {
   lastFrameTime = timestamp;
 
   updatePlayer(deltaTime);
+  updateGathering(deltaTime);
   updateNpc(deltaTime);
   updateCamera();
   renderWorld();
@@ -386,9 +435,6 @@ function handleKeyDown(event) {
   } else if (key === "d") {
     input.d = true;
     event.preventDefault();
-  } else if (key === "e") {
-    gatherWoodFromTree();
-    event.preventDefault();
   }
 }
 
@@ -406,12 +452,48 @@ function handleKeyUp(event) {
   }
 }
 
+function handleCanvasMouseDown(event) {
+  if (event.button !== 0 || !canvas || !getPlayer() || world.gathering) {
+    return;
+  }
+
+  const rect = canvas.getBoundingClientRect();
+  const clickX = ((event.clientX - rect.left) * canvas.width) / rect.width + world.camera.x;
+  const clickY = ((event.clientY - rect.top) * canvas.height) / rect.height + world.camera.y;
+  const tree = getTreeAtWorldPosition(clickX, clickY);
+
+  if (!tree) {
+    return;
+  }
+
+  const player = getPlayer();
+  const dx = player.x + player.width / 2 - (tree.x + tree.width / 2);
+  const dy = player.y + player.height / 2 - (tree.y + tree.height / 2);
+  const distance = Math.hypot(dx, dy);
+
+  if (distance <= GATHER_RANGE) {
+    startGathering(tree);
+  }
+}
+
+function handleCanvasMouseUp(event) {
+  if (event.button !== 0 || !world.gathering) {
+    return;
+  }
+
+  cancelGathering();
+}
+
 if (typeof window !== "undefined") {
   window.addEventListener("resize", resizeCanvas);
   window.addEventListener("keydown", handleKeyDown);
   window.addEventListener("keyup", handleKeyUp);
+  window.addEventListener("mouseup", handleCanvasMouseUp);
   window.addEventListener("load", () => {
     resizeCanvas();
+    if (canvas) {
+      canvas.addEventListener("mousedown", handleCanvasMouseDown);
+    }
     gameLoop(0);
   });
 }

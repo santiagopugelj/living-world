@@ -1,5 +1,11 @@
 # CHANGELOG - Living World
 
+## v0.11 - 2026-08-08
+
+- Changed tree gathering from instant interaction to a timed action
+- Added mouse-based tree gathering
+- Gathering is cancelled when the player moves too far away
+
 ## v0.10 - 2026-08-08
 
 - Added the first player resource interaction
