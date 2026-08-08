@@ -1,5 +1,10 @@
 # CHANGELOG - Living World
 
+## v0.12 - 2026-08-08
+
+- Added a visual progress bar for tree gathering
+- Improved feedback during resource gathering
+
 ## v0.11 - 2026-08-08
 
 - Changed tree gathering from instant interaction to a timed action

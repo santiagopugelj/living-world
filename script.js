@@ -392,6 +392,31 @@ function drawEntity(entity) {
   }
 }
 
+function drawGatheringProgress() {
+  if (!context || !canvas || !world.gathering) {
+    return;
+  }
+
+  const tree = world.gathering.tree;
+  const screenX = tree.x - world.camera.x;
+  const screenY = tree.y - world.camera.y;
+  const progress = Math.min(world.gathering.elapsedTime / GATHER_TIME, 1);
+  const barWidth = tree.width;
+  const barHeight = 8;
+  const barX = screenX;
+  const barY = screenY - barHeight - 8;
+
+  context.fillStyle = "rgba(0, 0, 0, 0.5)";
+  context.fillRect(barX, barY, barWidth, barHeight);
+
+  context.fillStyle = "#74d14c";
+  context.fillRect(barX + 1, barY + 1, Math.max(0, barWidth - 2) * progress, barHeight - 2);
+
+  context.strokeStyle = "#ffffff";
+  context.lineWidth = 1;
+  context.strokeRect(barX, barY, barWidth, barHeight);
+}
+
 function renderWorld() {
   if (!context || !canvas) {
     return;
@@ -402,6 +427,7 @@ function renderWorld() {
   context.fillRect(0, 0, canvas.width, canvas.height);
 
   world.entities.forEach(drawEntity);
+  drawGatheringProgress();
 }
 
 function gameLoop(timestamp) {
