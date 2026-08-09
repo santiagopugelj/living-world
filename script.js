@@ -16,12 +16,14 @@ const world = {
   },
   entities: [],
   wood: 0,
+  stone: 0,
   gathering: null
 };
 
 const canvas = typeof document !== "undefined" ? document.getElementById("worldCanvas") : null;
 const context = canvas ? canvas.getContext("2d") : null;
 const woodCounter = typeof document !== "undefined" ? document.getElementById("woodCounter") : null;
+const stoneCounter = typeof document !== "undefined" ? document.getElementById("stoneCounter") : null;
 const toolStateLabel = typeof document !== "undefined" ? document.getElementById("toolState") : null;
 const craftAxeButton = typeof document !== "undefined" ? document.getElementById("craftAxeButton") : null;
 const input = {
@@ -73,13 +75,24 @@ function getTreeAtWorldPosition(x, y) {
   );
 }
 
-function startGathering(tree) {
+function getResourceAtWorldPosition(x, y) {
+  return world.entities.find(
+    (entity) =>
+      (entity.type === "tree" || entity.type === "rock") &&
+      x >= entity.x &&
+      x <= entity.x + entity.width &&
+      y >= entity.y &&
+      y <= entity.y + entity.height
+  );
+}
+
+function startGathering(resource) {
   if (world.gathering) {
     return;
   }
 
   world.gathering = {
-    tree,
+    resource,
     elapsedTime: 0
   };
 }
@@ -93,10 +106,16 @@ function completeGathering() {
     return;
   }
 
-  const tree = world.gathering.tree;
-  world.entities = world.entities.filter((entity) => entity !== tree);
-  world.wood += 1;
-  updateWoodCounter();
+  const resource = world.gathering.resource;
+  world.entities = world.entities.filter((entity) => entity !== resource);
+
+  if (resource.type === "tree") {
+    world.wood += 1;
+  } else if (resource.type === "rock") {
+    world.stone += 1;
+  }
+
+  updateResourceCounters();
   world.gathering = null;
 }
 
@@ -112,9 +131,9 @@ function updateGathering(deltaTime) {
     return;
   }
 
-  const tree = world.gathering.tree;
-  const dx = player.x + player.width / 2 - (tree.x + tree.width / 2);
-  const dy = player.y + player.height / 2 - (tree.y + tree.height / 2);
+  const resource = world.gathering.resource;
+  const dx = player.x + player.width / 2 - (resource.x + resource.width / 2);
+  const dy = player.y + player.height / 2 - (resource.y + resource.height / 2);
   const distance = Math.hypot(dx, dy);
 
   if (distance > GATHER_RANGE) {
@@ -123,7 +142,7 @@ function updateGathering(deltaTime) {
   }
 
   world.gathering.elapsedTime += deltaTime;
-  const currentGatherTime = getCurrentGatherTime(player);
+  const currentGatherTime = resource.type === "tree" ? getCurrentGatherTime(player) : GATHER_TIME;
 
   if (world.gathering.elapsedTime >= currentGatherTime) {
     completeGathering();
@@ -169,12 +188,16 @@ function craftAxe() {
 
   world.wood -= AXE_COST;
   player.axe = AXE_TYPES.BASIC;
-  updateWoodCounter();
+  updateResourceCounters();
 }
 
-function updateWoodCounter() {
+function updateResourceCounters() {
   if (woodCounter) {
     woodCounter.textContent = `Wood: ${world.wood}`;
+  }
+
+  if (stoneCounter) {
+    stoneCounter.textContent = `Stone: ${world.stone}`;
   }
 
   updateToolState();
@@ -222,8 +245,14 @@ function resizeCanvas() {
     return;
   }
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const width = Math.max(800, window.innerWidth, document.documentElement.clientWidth, document.body.clientWidth);
+  const height = Math.max(600, window.innerHeight, document.documentElement.clientHeight, document.body.clientHeight);
+
+  canvas.width = width;
+  canvas.height = height;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
   lastFrameTime = 0;
   createWorld();
 }
@@ -257,6 +286,7 @@ function createEntityAtFreePosition(type, width, height, targetWorld) {
 function createWorld() {
   world.entities = [];
   world.wood = 0;
+  world.stone = 0;
   world.gathering = null;
 
   for (let i = 0; i < 20; i += 1) {
@@ -296,7 +326,7 @@ function createWorld() {
 
   chooseTreeDestination(npc);
   world.entities.push(npc);
-  updateWoodCounter();
+  updateResourceCounters();
 }
 
 function updatePlayer(deltaTime) {
@@ -452,13 +482,13 @@ function drawGatheringProgress() {
     return;
   }
 
-  const tree = world.gathering.tree;
-  const screenX = tree.x - world.camera.x;
-  const screenY = tree.y - world.camera.y;
+  const resource = world.gathering.resource;
+  const screenX = resource.x - world.camera.x;
+  const screenY = resource.y - world.camera.y;
   const player = getPlayer();
-  const currentGatherTime = getCurrentGatherTime(player);
+  const currentGatherTime = resource.type === "tree" ? getCurrentGatherTime(player) : GATHER_TIME;
   const progress = Math.min(world.gathering.elapsedTime / currentGatherTime, 1);
-  const barWidth = tree.width;
+  const barWidth = resource.width;
   const barHeight = 8;
   const barX = screenX;
   const barY = screenY - barHeight - 8;
@@ -543,19 +573,19 @@ function handleCanvasMouseDown(event) {
   const rect = canvas.getBoundingClientRect();
   const clickX = ((event.clientX - rect.left) * canvas.width) / rect.width + world.camera.x;
   const clickY = ((event.clientY - rect.top) * canvas.height) / rect.height + world.camera.y;
-  const tree = getTreeAtWorldPosition(clickX, clickY);
+  const resource = getResourceAtWorldPosition(clickX, clickY);
 
-  if (!tree) {
+  if (!resource) {
     return;
   }
 
   const player = getPlayer();
-  const dx = player.x + player.width / 2 - (tree.x + tree.width / 2);
-  const dy = player.y + player.height / 2 - (tree.y + tree.height / 2);
+  const dx = player.x + player.width / 2 - (resource.x + resource.width / 2);
+  const dy = player.y + player.height / 2 - (resource.y + resource.height / 2);
   const distance = Math.hypot(dx, dy);
 
   if (distance <= GATHER_RANGE) {
-    startGathering(tree);
+    startGathering(resource);
   }
 }
 
@@ -568,12 +598,9 @@ function handleCanvasMouseUp(event) {
 }
 
 if (typeof window !== "undefined") {
-  window.addEventListener("resize", resizeCanvas);
-  window.addEventListener("keydown", handleKeyDown);
-  window.addEventListener("keyup", handleKeyUp);
-  window.addEventListener("mouseup", handleCanvasMouseUp);
-  window.addEventListener("load", () => {
+  const initializeGame = () => {
     resizeCanvas();
+
     if (canvas) {
       canvas.addEventListener("mousedown", handleCanvasMouseDown);
     }
@@ -583,7 +610,18 @@ if (typeof window !== "undefined") {
     }
 
     gameLoop(0);
-  });
+  };
+
+  window.addEventListener("resize", resizeCanvas);
+  window.addEventListener("keydown", handleKeyDown);
+  window.addEventListener("keyup", handleKeyUp);
+  window.addEventListener("mouseup", handleCanvasMouseUp);
+
+  if (document.readyState === "complete") {
+    initializeGame();
+  } else {
+    window.addEventListener("load", initializeGame);
+  }
 }
 
 if (typeof module !== "undefined" && module.exports) {

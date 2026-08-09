@@ -1,5 +1,11 @@
 # CHANGELOG - Living World
 
+## v0.14 - 2026-08-09
+
+- Added stone gathering
+- Added a stone resource counter
+- Added gathering feedback for rocks
+
 ## v0.13 - 2026-08-09
 
 - Added basic axe crafting using wood
