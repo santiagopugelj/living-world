@@ -1,5 +1,11 @@
 # CHANGELOG - Living World
 
+## v0.13 - 2026-08-09
+
+- Added basic axe crafting using wood
+- Added a basic player tool state
+- Added faster tree gathering when using an axe
+
 ## v0.12 - 2026-08-08
 
 - Added a visual progress bar for tree gathering

@@ -1,5 +1,11 @@
 const GATHER_RANGE = 48;
 const GATHER_TIME = 2;
+const AXE_COST = 3;
+const AXE_GATHER_TIME_MODIFIER = 0.6;
+const AXE_TYPES = {
+  NONE: "none",
+  BASIC: "basic"
+};
 
 const world = {
   width: 2000,
@@ -16,6 +22,8 @@ const world = {
 const canvas = typeof document !== "undefined" ? document.getElementById("worldCanvas") : null;
 const context = canvas ? canvas.getContext("2d") : null;
 const woodCounter = typeof document !== "undefined" ? document.getElementById("woodCounter") : null;
+const toolStateLabel = typeof document !== "undefined" ? document.getElementById("toolState") : null;
+const craftAxeButton = typeof document !== "undefined" ? document.getElementById("craftAxeButton") : null;
 const input = {
   w: false,
   a: false,
@@ -115,16 +123,62 @@ function updateGathering(deltaTime) {
   }
 
   world.gathering.elapsedTime += deltaTime;
+  const currentGatherTime = getCurrentGatherTime(player);
 
-  if (world.gathering.elapsedTime >= GATHER_TIME) {
+  if (world.gathering.elapsedTime >= currentGatherTime) {
     completeGathering();
   }
+}
+
+function playerHasBasicAxe(player) {
+  return player?.axe === AXE_TYPES.BASIC;
+}
+
+function getCurrentGatherTime(player) {
+  return playerHasBasicAxe(player) ? GATHER_TIME * AXE_GATHER_TIME_MODIFIER : GATHER_TIME;
+}
+
+function updateToolState() {
+  if (!toolStateLabel) {
+    return;
+  }
+
+  const player = getPlayer();
+  const toolLabel = playerHasBasicAxe(player) ? "Basic Axe" : "None";
+
+  toolStateLabel.textContent = `Tool: ${toolLabel}`;
+}
+
+function updateCraftAxeButton() {
+  if (!craftAxeButton) {
+    return;
+  }
+
+  const player = getPlayer();
+  const hasAxe = playerHasBasicAxe(player);
+
+  craftAxeButton.disabled = hasAxe || world.wood < AXE_COST;
+  craftAxeButton.textContent = hasAxe ? "Axe Crafted" : `Craft Axe (${AXE_COST} wood)`;
+}
+
+function craftAxe() {
+  const player = getPlayer();
+  if (!player || playerHasBasicAxe(player) || world.wood < AXE_COST) {
+    return;
+  }
+
+  world.wood -= AXE_COST;
+  player.axe = AXE_TYPES.BASIC;
+  updateWoodCounter();
 }
 
 function updateWoodCounter() {
   if (woodCounter) {
     woodCounter.textContent = `Wood: ${world.wood}`;
   }
+
+  updateToolState();
+  updateCraftAxeButton();
 }
 
 function isColliding(entityA, entityB) {
@@ -223,7 +277,8 @@ function createWorld() {
     y: world.height / 2 - 12,
     width: 24,
     height: 24,
-    speed: 220
+    speed: 220,
+    axe: AXE_TYPES.NONE
   });
 
   const npc = {
@@ -400,7 +455,9 @@ function drawGatheringProgress() {
   const tree = world.gathering.tree;
   const screenX = tree.x - world.camera.x;
   const screenY = tree.y - world.camera.y;
-  const progress = Math.min(world.gathering.elapsedTime / GATHER_TIME, 1);
+  const player = getPlayer();
+  const currentGatherTime = getCurrentGatherTime(player);
+  const progress = Math.min(world.gathering.elapsedTime / currentGatherTime, 1);
   const barWidth = tree.width;
   const barHeight = 8;
   const barX = screenX;
@@ -520,6 +577,11 @@ if (typeof window !== "undefined") {
     if (canvas) {
       canvas.addEventListener("mousedown", handleCanvasMouseDown);
     }
+
+    if (craftAxeButton) {
+      craftAxeButton.addEventListener("click", craftAxe);
+    }
+
     gameLoop(0);
   });
 }
@@ -529,7 +591,6 @@ if (typeof module !== "undefined" && module.exports) {
     createEntityAtFreePosition,
     isColliding,
     moveEntityWithCollision,
-    gatherWoodFromTree,
     world
   };
 }

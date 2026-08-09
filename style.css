@@ -17,17 +17,35 @@ body {
   position: relative;
 }
 
-#woodCounter {
+#hud {
   position: absolute;
   top: 16px;
   left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+#hud > div,
+#hud > button {
   padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.45);
   color: #ffffff;
   font-family: system-ui, sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   border-radius: 8px;
-  z-index: 1;
+  border: none;
+  pointer-events: auto;
+}
+
+#hud > button {
+  cursor: pointer;
+}
+
+#woodCounter,
+#toolState {
   pointer-events: none;
 }
 
