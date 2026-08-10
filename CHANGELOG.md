@@ -1,5 +1,11 @@
 # CHANGELOG - Living World
 
+## v0.15 - 2026-08-10
+
+- Added a second autonomous NPC
+- NPCs now make independent movement decisions
+- Improved the feeling of a populated living world
+
 ## v0.14 - 2026-08-09
 
 - Added stone gathering

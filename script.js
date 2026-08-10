@@ -311,7 +311,7 @@ function createWorld() {
     axe: AXE_TYPES.NONE
   });
 
-  const npc = {
+  const firstNpc = {
     type: "npc",
     x: Math.random() * world.width,
     y: Math.random() * world.height,
@@ -320,12 +320,30 @@ function createWorld() {
     speed: 120,
     targetX: 0,
     targetY: 0,
-    waitTime: 0,
-    stuckTime: 0
+    waitTime: Math.random() * 2,
+    stuckTime: 0,
+    color: "#f2d53c"
   };
 
-  chooseTreeDestination(npc);
-  world.entities.push(npc);
+  chooseTreeDestination(firstNpc);
+  world.entities.push(firstNpc);
+
+  const secondNpc = {
+    type: "npc",
+    x: Math.random() * world.width,
+    y: Math.random() * world.height,
+    width: 20,
+    height: 20,
+    speed: 120,
+    targetX: 0,
+    targetY: 0,
+    waitTime: Math.random() * 2,
+    stuckTime: 0,
+    color: "#d14cf2"
+  };
+
+  chooseTreeDestination(secondNpc);
+  world.entities.push(secondNpc);
   updateResourceCounters();
 }
 
@@ -380,8 +398,15 @@ function updateCamera() {
   world.camera.y = clamp(player.y + player.height / 2 - canvas.height / 2, 0, maxCameraY);
 }
 
+function getNpcEntities() {
+  return world.entities.filter((entity) => entity.type === "npc");
+}
+
 function chooseTreeDestination(npc) {
   const trees = world.entities.filter((entity) => entity.type === "tree");
+  const otherNpcTargets = getNpcEntities()
+    .filter((other) => other !== npc)
+    .map((other) => ({ x: other.targetX, y: other.targetY }));
 
   if (trees.length === 0) {
     npc.targetX = Math.random() * (world.width - npc.width);
@@ -389,13 +414,16 @@ function chooseTreeDestination(npc) {
     return;
   }
 
-  const treesWithDistance = trees.map((tree) => ({
-    tree,
-    distance: Math.hypot(tree.x - npc.x, tree.y - npc.y)
-  }));
+  const candidateTrees = trees.filter((tree) =>
+    !otherNpcTargets.some((target) => target.x === tree.x && target.y === tree.y)
+  );
+  const distanceTrees = (treeList) =>
+    treeList
+      .map((tree) => ({ tree, distance: Math.hypot(tree.x - npc.x, tree.y - npc.y) }))
+      .sort((a, b) => a.distance - b.distance);
 
-  treesWithDistance.sort((a, b) => a.distance - b.distance);
-  const nearest = treesWithDistance.slice(0, Math.min(3, treesWithDistance.length));
+  const availableTrees = candidateTrees.length > 0 ? candidateTrees : trees;
+  const nearest = distanceTrees(availableTrees).slice(0, Math.min(3, availableTrees.length));
   const choice = nearest[Math.floor(Math.random() * nearest.length)].tree;
 
   npc.targetX = choice.x;
@@ -403,57 +431,55 @@ function chooseTreeDestination(npc) {
 }
 
 function updateNpc(deltaTime) {
-  const npc = world.entities.find((entity) => entity.type === "npc");
+  const npcs = world.entities.filter((entity) => entity.type === "npc");
 
-  if (!npc) {
-    return;
-  }
+  npcs.forEach((npc) => {
+    if (npc.waitTime > 0) {
+      npc.waitTime -= deltaTime;
 
-  if (npc.waitTime > 0) {
-    npc.waitTime -= deltaTime;
+      if (npc.waitTime <= 0) {
+        npc.waitTime = 0;
+        chooseTreeDestination(npc);
+        npc.stuckTime = 0;
+      }
 
-    if (npc.waitTime <= 0) {
-      npc.waitTime = 0;
-      chooseTreeDestination(npc);
+      return;
+    }
+
+    const dx = npc.targetX - npc.x;
+    const dy = npc.targetY - npc.y;
+    const distanceToTarget = Math.hypot(dx, dy);
+
+    if (distanceToTarget <= 1) {
+      npc.x = npc.targetX;
+      npc.y = npc.targetY;
+      npc.waitTime = 2 + Math.random() * 4;
+      npc.stuckTime = 0;
+      return;
+    }
+
+    const moveDistance = Math.min(distanceToTarget, npc.speed * deltaTime);
+    const nextX = npc.x + (dx / distanceToTarget) * moveDistance;
+    const nextY = npc.y + (dy / distanceToTarget) * moveDistance;
+    const previousX = npc.x;
+    const previousY = npc.y;
+
+    moveEntityWithCollision(npc, nextX, nextY, world);
+
+    const actualMovement = Math.hypot(npc.x - previousX, npc.y - previousY);
+
+    if (actualMovement < 0.5) {
+      npc.stuckTime += deltaTime;
+    } else {
       npc.stuckTime = 0;
     }
 
-    return;
-  }
-
-  const dx = npc.targetX - npc.x;
-  const dy = npc.targetY - npc.y;
-  const distanceToTarget = Math.hypot(dx, dy);
-
-  if (distanceToTarget <= 1) {
-    npc.x = npc.targetX;
-    npc.y = npc.targetY;
-    npc.waitTime = 2 + Math.random() * 4;
-    npc.stuckTime = 0;
-    return;
-  }
-
-  const moveDistance = Math.min(distanceToTarget, npc.speed * deltaTime);
-  const nextX = npc.x + (dx / distanceToTarget) * moveDistance;
-  const nextY = npc.y + (dy / distanceToTarget) * moveDistance;
-  const previousX = npc.x;
-  const previousY = npc.y;
-
-  moveEntityWithCollision(npc, nextX, nextY, world);
-
-  const actualMovement = Math.hypot(npc.x - previousX, npc.y - previousY);
-
-  if (actualMovement < 0.5) {
-    npc.stuckTime += deltaTime;
-  } else {
-    npc.stuckTime = 0;
-  }
-
-  if (npc.stuckTime >= 2) {
-    npc.stuckTime = 0;
-    npc.waitTime = 0.5 + Math.random();
-    chooseTreeDestination(npc);
-  }
+    if (npc.stuckTime >= 2) {
+      npc.stuckTime = 0;
+      npc.waitTime = 0.5 + Math.random();
+      chooseTreeDestination(npc);
+    }
+  });
 }
 
 function drawEntity(entity) {
@@ -472,7 +498,7 @@ function drawEntity(entity) {
     context.fillStyle = "#2f5cff";
     context.fillRect(screenX, screenY, entity.width, entity.height);
   } else if (entity.type === "npc") {
-    context.fillStyle = "#f2d53c";
+    context.fillStyle = entity.color || "#f2d53c";
     context.fillRect(screenX, screenY, entity.width, entity.height);
   }
 }
