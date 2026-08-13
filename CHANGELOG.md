@@ -1,5 +1,11 @@
 # CHANGELOG - Living World
 
+## v0.16 - 2026-08-13
+
+- Added food plants to the world
+- Added food gathering for the player
+- Added food as a basic world resource
+
 ## v0.15 - 2026-08-10
 
 - Added a second autonomous NPC

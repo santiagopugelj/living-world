@@ -17,6 +17,7 @@ const world = {
   entities: [],
   wood: 0,
   stone: 0,
+  food: 0,
   gathering: null
 };
 
@@ -24,6 +25,7 @@ const canvas = typeof document !== "undefined" ? document.getElementById("worldC
 const context = canvas ? canvas.getContext("2d") : null;
 const woodCounter = typeof document !== "undefined" ? document.getElementById("woodCounter") : null;
 const stoneCounter = typeof document !== "undefined" ? document.getElementById("stoneCounter") : null;
+const foodCounter = typeof document !== "undefined" ? document.getElementById("foodCounter") : null;
 const toolStateLabel = typeof document !== "undefined" ? document.getElementById("toolState") : null;
 const craftAxeButton = typeof document !== "undefined" ? document.getElementById("craftAxeButton") : null;
 const input = {
@@ -75,10 +77,10 @@ function getTreeAtWorldPosition(x, y) {
   );
 }
 
-function getResourceAtWorldPosition(x, y) {
-  return world.entities.find(
+function getResourceAtWorldPosition(x, y, targetWorld = world) {
+  return targetWorld.entities.find(
     (entity) =>
-      (entity.type === "tree" || entity.type === "rock") &&
+      (entity.type === "tree" || entity.type === "rock" || entity.type === "foodPlant") &&
       x >= entity.x &&
       x <= entity.x + entity.width &&
       y >= entity.y &&
@@ -113,6 +115,8 @@ function completeGathering() {
     world.wood += 1;
   } else if (resource.type === "rock") {
     world.stone += 1;
+  } else if (resource.type === "foodPlant") {
+    world.food += 1;
   }
 
   updateResourceCounters();
@@ -200,6 +204,10 @@ function updateResourceCounters() {
     stoneCounter.textContent = `Stone: ${world.stone}`;
   }
 
+  if (foodCounter) {
+    foodCounter.textContent = `Food: ${world.food}`;
+  }
+
   updateToolState();
   updateCraftAxeButton();
 }
@@ -215,7 +223,10 @@ function isColliding(entityA, entityB) {
 
 function isBlockedByObstacle(entity, world) {
   return world.entities.some((candidate) => {
-    if (candidate === entity || (candidate.type !== "tree" && candidate.type !== "rock")) {
+    if (
+      candidate === entity ||
+      (candidate.type !== "tree" && candidate.type !== "rock" && candidate.type !== "foodPlant")
+    ) {
       return false;
     }
 
@@ -287,6 +298,7 @@ function createWorld() {
   world.entities = [];
   world.wood = 0;
   world.stone = 0;
+  world.food = 0;
   world.gathering = null;
 
   for (let i = 0; i < 20; i += 1) {
@@ -299,6 +311,12 @@ function createWorld() {
     const rockSize = randomBetween(24 - 2, 24 + 2);
     const rock = createEntityAtFreePosition("rock", rockSize, rockSize, world);
     world.entities.push(rock);
+  }
+
+  for (let i = 0; i < 12; i += 1) {
+    const foodPlantSize = randomBetween(18 - 2, 18 + 2);
+    const foodPlant = createEntityAtFreePosition("foodPlant", foodPlantSize, foodPlantSize, world);
+    world.entities.push(foodPlant);
   }
 
   world.entities.push({
@@ -494,6 +512,22 @@ function drawEntity(entity) {
   } else if (entity.type === "rock") {
     context.fillStyle = "#8C8888";
     context.fillRect(screenX, screenY, entity.width, entity.height);
+  } else if (entity.type === "foodPlant") {
+    context.fillStyle = "#5fae4d";
+    context.fillRect(screenX, screenY, entity.width, entity.height);
+    context.fillStyle = "#5a1d1d";
+    context.fillRect(
+      screenX + Math.max(2, entity.width * 0.2),
+      screenY + Math.max(2, entity.height * 0.2),
+      Math.max(3, entity.width * 0.18),
+      Math.max(3, entity.height * 0.18)
+    );
+    context.fillRect(
+      screenX + Math.max(2, entity.width * 0.62),
+      screenY + Math.max(2, entity.height * 0.62),
+      Math.max(3, entity.width * 0.18),
+      Math.max(3, entity.height * 0.18)
+    );
   } else if (entity.type === "player") {
     context.fillStyle = "#2f5cff";
     context.fillRect(screenX, screenY, entity.width, entity.height);
@@ -653,6 +687,7 @@ if (typeof window !== "undefined") {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     createEntityAtFreePosition,
+    getResourceAtWorldPosition,
     isColliding,
     moveEntityWithCollision,
     world

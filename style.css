@@ -45,6 +45,8 @@ body {
 }
 
 #woodCounter,
+#stoneCounter,
+#foodCounter,
 #toolState {
   pointer-events: none;
 }
