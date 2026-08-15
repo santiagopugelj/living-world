@@ -18,7 +18,8 @@ const world = {
   wood: 0,
   stone: 0,
   food: 0,
-  gathering: null
+  gathering: null,
+  dialogueNpc: null
 };
 
 const canvas = typeof document !== "undefined" ? document.getElementById("worldCanvas") : null;
@@ -28,6 +29,10 @@ const stoneCounter = typeof document !== "undefined" ? document.getElementById("
 const foodCounter = typeof document !== "undefined" ? document.getElementById("foodCounter") : null;
 const toolStateLabel = typeof document !== "undefined" ? document.getElementById("toolState") : null;
 const craftAxeButton = typeof document !== "undefined" ? document.getElementById("craftAxeButton") : null;
+const dialogueBox = typeof document !== "undefined" ? document.getElementById("dialogueBox") : null;
+const dialogueName = typeof document !== "undefined" ? document.getElementById("dialogueName") : null;
+const dialogueText = typeof document !== "undefined" ? document.getElementById("dialogueText") : null;
+const closeDialogueButton = typeof document !== "undefined" ? document.getElementById("closeDialogueButton") : null;
 const input = {
   w: false,
   a: false,
@@ -86,6 +91,37 @@ function getResourceAtWorldPosition(x, y, targetWorld = world) {
       y >= entity.y &&
       y <= entity.y + entity.height
   );
+}
+
+function getNpcAtWorldPosition(x, y) {
+  return world.entities.find(
+    (entity) =>
+      entity.type === "npc" &&
+      x >= entity.x &&
+      x <= entity.x + entity.width &&
+      y >= entity.y &&
+      y <= entity.y + entity.height
+  );
+}
+
+function openDialogue(npc) {
+  world.dialogueNpc = npc;
+
+  if (!dialogueBox || !dialogueName || !dialogueText) {
+    return;
+  }
+
+  dialogueName.textContent = npc.name;
+  dialogueText.textContent = npc.dialogue;
+  dialogueBox.hidden = false;
+}
+
+function closeDialogue() {
+  world.dialogueNpc = null;
+
+  if (dialogueBox) {
+    dialogueBox.hidden = true;
+  }
 }
 
 function startGathering(resource) {
@@ -300,6 +336,7 @@ function createWorld() {
   world.stone = 0;
   world.food = 0;
   world.gathering = null;
+  world.dialogueNpc = null;
 
   for (let i = 0; i < 20; i += 1) {
     const treeSize = randomBetween(56 - 2, 56 + 2);
@@ -340,7 +377,9 @@ function createWorld() {
     targetY: 0,
     waitTime: Math.random() * 2,
     stuckTime: 0,
-    color: "#f2d53c"
+    color: "#f2d53c",
+    name: "Luna",
+    dialogue: "Hola, ¿cómo estás?"
   };
 
   chooseTreeDestination(firstNpc);
@@ -357,7 +396,9 @@ function createWorld() {
     targetY: 0,
     waitTime: Math.random() * 2,
     stuckTime: 0,
-    color: "#d14cf2"
+    color: "#d14cf2",
+    name: "Mateo",
+    dialogue: "Qué lindo día en el bosque."
   };
 
   chooseTreeDestination(secondNpc);
@@ -452,6 +493,10 @@ function updateNpc(deltaTime) {
   const npcs = world.entities.filter((entity) => entity.type === "npc");
 
   npcs.forEach((npc) => {
+    if (npc === world.dialogueNpc) {
+      return;
+    }
+
     if (npc.waitTime > 0) {
       npc.waitTime -= deltaTime;
 
@@ -633,6 +678,13 @@ function handleCanvasMouseDown(event) {
   const rect = canvas.getBoundingClientRect();
   const clickX = ((event.clientX - rect.left) * canvas.width) / rect.width + world.camera.x;
   const clickY = ((event.clientY - rect.top) * canvas.height) / rect.height + world.camera.y;
+  const npc = getNpcAtWorldPosition(clickX, clickY);
+
+  if (npc) {
+    openDialogue(npc);
+    return;
+  }
+
   const resource = getResourceAtWorldPosition(clickX, clickY);
 
   if (!resource) {
@@ -669,6 +721,10 @@ if (typeof window !== "undefined") {
       craftAxeButton.addEventListener("click", craftAxe);
     }
 
+    if (closeDialogueButton) {
+      closeDialogueButton.addEventListener("click", closeDialogue);
+    }
+
     gameLoop(0);
   };
 
@@ -687,9 +743,12 @@ if (typeof window !== "undefined") {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     createEntityAtFreePosition,
+    getNpcAtWorldPosition,
     getResourceAtWorldPosition,
     isColliding,
     moveEntityWithCollision,
-    world
+    world,
+    openDialogue,
+    closeDialogue
   };
 }

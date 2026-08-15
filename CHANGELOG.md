@@ -1,5 +1,10 @@
 # CHANGELOG - Living World
 
+## v0.17 - 2026-08-15
+
+- Added basic NPC interaction
+- Added simple one-way NPC dialogue
+
 ## v0.16 - 2026-08-13
 
 - Added food plants to the world
