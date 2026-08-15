@@ -2,6 +2,7 @@ const GATHER_RANGE = 48;
 const GATHER_TIME = 2;
 const AXE_COST = 3;
 const AXE_GATHER_TIME_MODIFIER = 0.6;
+const RESOURCE_REGENERATION_TIME = 10 * 60 * 1000;
 const SAVE_KEY = "living-world-save";
 const AXE_TYPES = {
   NONE: "none",
@@ -20,7 +21,8 @@ const world = {
   stone: 0,
   food: 0,
   gathering: null,
-  dialogueNpc: null
+  dialogueNpc: null,
+  regeneratingResources: []
 };
 
 const canvas = typeof document !== "undefined" ? document.getElementById("worldCanvas") : null;
@@ -147,6 +149,14 @@ function completeGathering() {
 
   const resource = world.gathering.resource;
   world.entities = world.entities.filter((entity) => entity !== resource);
+  world.regeneratingResources.push({
+    type: resource.type,
+    x: resource.x,
+    y: resource.y,
+    width: resource.width,
+    height: resource.height,
+    gatheredAt: Date.now()
+  });
 
   if (resource.type === "tree") {
     world.wood += 1;
@@ -256,12 +266,30 @@ function saveGame() {
         wood: world.wood,
         stone: world.stone,
         food: world.food,
-        resources
+        resources,
+        regeneratingResources: world.regeneratingResources
       })
     );
   } catch (error) {
     // Saving is optional when browser storage is unavailable.
   }
+}
+
+function updateResourceRegeneration() {
+  const now = Date.now();
+  const readyResources = world.regeneratingResources.filter(
+    (resource) => now - resource.gatheredAt >= RESOURCE_REGENERATION_TIME
+  );
+
+  if (readyResources.length === 0) {
+    return;
+  }
+
+  world.entities.push(...readyResources.map(({ type, x, y, width, height }) => ({ type, x, y, width, height })));
+  world.regeneratingResources = world.regeneratingResources.filter(
+    (resource) => now - resource.gatheredAt < RESOURCE_REGENERATION_TIME
+  );
+  saveGame();
 }
 
 function loadGame() {
@@ -284,9 +312,13 @@ function loadGame() {
     world.wood = savedGame.wood || 0;
     world.stone = savedGame.stone || 0;
     world.food = savedGame.food || 0;
+    world.regeneratingResources = Array.isArray(savedGame.regeneratingResources)
+      ? savedGame.regeneratingResources
+      : [];
     world.entities = world.entities
       .filter((entity) => entity.type === "player" || entity.type === "npc")
       .concat(savedGame.resources);
+    updateResourceRegeneration();
     getNpcEntities().forEach(chooseTreeDestination);
     updateResourceCounters();
     return true;
@@ -400,6 +432,7 @@ function createWorld() {
   world.food = 0;
   world.gathering = null;
   world.dialogueNpc = null;
+  world.regeneratingResources = [];
 
   for (let i = 0; i < 20; i += 1) {
     const treeSize = randomBetween(56 - 2, 56 + 2);
@@ -696,6 +729,7 @@ function gameLoop(timestamp) {
 
   updatePlayer(deltaTime);
   updateGathering(deltaTime);
+  updateResourceRegeneration();
   updateNpc(deltaTime);
   updateCamera();
   renderWorld();
@@ -819,6 +853,7 @@ if (typeof module !== "undefined" && module.exports) {
     openDialogue,
     closeDialogue,
     saveGame,
-    loadGame
+    loadGame,
+    updateResourceRegeneration
   };
 }

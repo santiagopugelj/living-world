@@ -1,5 +1,11 @@
 # CHANGELOG - Living World
 
+## v0.19 - 2026-08-15
+
+- Added persistent resource regeneration
+- Trees, rocks and food plants respawn after 10 minutes
+- Resource regeneration continues while the game is closed
+
 ## v0.18 - 2026-08-15
 
 - Added basic local game persistence
