@@ -2,6 +2,7 @@ const GATHER_RANGE = 48;
 const GATHER_TIME = 2;
 const AXE_COST = 3;
 const AXE_GATHER_TIME_MODIFIER = 0.6;
+const SAVE_KEY = "living-world-save";
 const AXE_TYPES = {
   NONE: "none",
   BASIC: "basic"
@@ -157,6 +158,7 @@ function completeGathering() {
 
   updateResourceCounters();
   world.gathering = null;
+  saveGame();
 }
 
 function updateGathering(deltaTime) {
@@ -229,6 +231,68 @@ function craftAxe() {
   world.wood -= AXE_COST;
   player.axe = AXE_TYPES.BASIC;
   updateResourceCounters();
+  saveGame();
+}
+
+function saveGame() {
+  if (typeof localStorage === "undefined") {
+    return;
+  }
+
+  const player = getPlayer();
+  if (!player) {
+    return;
+  }
+
+  const resources = world.entities
+    .filter((entity) => entity.type === "tree" || entity.type === "rock" || entity.type === "foodPlant")
+    .map(({ type, x, y, width, height }) => ({ type, x, y, width, height }));
+
+  try {
+    localStorage.setItem(
+      SAVE_KEY,
+      JSON.stringify({
+        player: { x: player.x, y: player.y, axe: player.axe },
+        wood: world.wood,
+        stone: world.stone,
+        food: world.food,
+        resources
+      })
+    );
+  } catch (error) {
+    // Saving is optional when browser storage is unavailable.
+  }
+}
+
+function loadGame() {
+  if (typeof localStorage === "undefined") {
+    return false;
+  }
+
+  try {
+    const savedGame = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (!savedGame || !savedGame.player || !Array.isArray(savedGame.resources)) {
+      return false;
+    }
+
+    createWorld();
+
+    const player = getPlayer();
+    player.x = savedGame.player.x;
+    player.y = savedGame.player.y;
+    player.axe = savedGame.player.axe === AXE_TYPES.BASIC ? AXE_TYPES.BASIC : AXE_TYPES.NONE;
+    world.wood = savedGame.wood || 0;
+    world.stone = savedGame.stone || 0;
+    world.food = savedGame.food || 0;
+    world.entities = world.entities
+      .filter((entity) => entity.type === "player" || entity.type === "npc")
+      .concat(savedGame.resources);
+    getNpcEntities().forEach(chooseTreeDestination);
+    updateResourceCounters();
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
 
 function updateResourceCounters() {
@@ -301,7 +365,6 @@ function resizeCanvas() {
   canvas.style.height = `${height}px`;
 
   lastFrameTime = 0;
-  createWorld();
 }
 
 function createEntityAtFreePosition(type, width, height, targetWorld) {
@@ -440,6 +503,7 @@ function updatePlayer(deltaTime) {
       player.y + moveY * player.speed * deltaTime,
       world
     );
+    saveGame();
   }
 }
 
@@ -712,6 +776,10 @@ function handleCanvasMouseUp(event) {
 if (typeof window !== "undefined") {
   const initializeGame = () => {
     resizeCanvas();
+    if (!loadGame()) {
+      createWorld();
+      saveGame();
+    }
 
     if (canvas) {
       canvas.addEventListener("mousedown", handleCanvasMouseDown);
@@ -749,6 +817,8 @@ if (typeof module !== "undefined" && module.exports) {
     moveEntityWithCollision,
     world,
     openDialogue,
-    closeDialogue
+    closeDialogue,
+    saveGame,
+    loadGame
   };
 }

@@ -1,5 +1,10 @@
 # CHANGELOG - Living World
 
+## v0.18 - 2026-08-15
+
+- Added basic local game persistence
+- Game state is restored after page refresh or reopening
+
 ## v0.17 - 2026-08-15
 
 - Added basic NPC interaction
