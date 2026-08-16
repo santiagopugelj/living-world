@@ -51,6 +51,29 @@ body {
   pointer-events: none;
 }
 
+#inventoryPanel {
+  position: fixed;
+  top: 72px;
+  left: 16px;
+  min-width: 190px;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.78);
+  color: #ffffff;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  border-radius: 8px;
+  z-index: 2;
+}
+
+#inventoryPanel h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+#inventoryPanel div + div {
+  margin-top: 6px;
+}
+
 canvas {
   display: block;
   width: 100%;

@@ -1,5 +1,11 @@
 # CHANGELOG - Living World
 
+## v0.20 - 2026-08-16
+
+- Added basic player inventory
+- Added inventory display for resources and axe
+- Connected inventory to existing persistence
+
 ## v0.19 - 2026-08-15
 
 - Added persistent resource regeneration

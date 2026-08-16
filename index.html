@@ -8,13 +8,16 @@
   </head>
   <body>
     <div id="hud">
-      <div id="woodCounter">Wood: 0</div>
-      <div id="stoneCounter">Stone: 0</div>
-      <div id="foodCounter">Food: 0</div>
-      <div id="toolState">Tool: None</div>
-      <button id="craftAxeButton" type="button">Craft Axe (3 wood)</button>
+      <button id="inventoryButton" type="button" aria-expanded="false" aria-controls="inventoryPanel">Inventory</button>
     </div>
     <canvas id="worldCanvas"></canvas>
+    <section id="inventoryPanel" aria-labelledby="inventoryTitle" hidden>
+      <h2 id="inventoryTitle">Inventory</h2>
+      <div id="inventoryWood">Wood: 0</div>
+      <div id="inventoryStone">Stone: 0</div>
+      <div id="inventoryFood">Food: 0</div>
+      <div id="inventoryAxe" hidden>Tool: Basic Axe</div>
+    </section>
     <div id="dialogueBox" role="dialog" aria-labelledby="dialogueName" hidden>
       <strong id="dialogueName"></strong>
       <p id="dialogueText"></p>

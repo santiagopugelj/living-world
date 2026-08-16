@@ -32,6 +32,12 @@ const stoneCounter = typeof document !== "undefined" ? document.getElementById("
 const foodCounter = typeof document !== "undefined" ? document.getElementById("foodCounter") : null;
 const toolStateLabel = typeof document !== "undefined" ? document.getElementById("toolState") : null;
 const craftAxeButton = typeof document !== "undefined" ? document.getElementById("craftAxeButton") : null;
+const inventoryButton = typeof document !== "undefined" ? document.getElementById("inventoryButton") : null;
+const inventoryPanel = typeof document !== "undefined" ? document.getElementById("inventoryPanel") : null;
+const inventoryWood = typeof document !== "undefined" ? document.getElementById("inventoryWood") : null;
+const inventoryStone = typeof document !== "undefined" ? document.getElementById("inventoryStone") : null;
+const inventoryFood = typeof document !== "undefined" ? document.getElementById("inventoryFood") : null;
+const inventoryAxe = typeof document !== "undefined" ? document.getElementById("inventoryAxe") : null;
 const dialogueBox = typeof document !== "undefined" ? document.getElementById("dialogueBox") : null;
 const dialogueName = typeof document !== "undefined" ? document.getElementById("dialogueName") : null;
 const dialogueText = typeof document !== "undefined" ? document.getElementById("dialogueText") : null;
@@ -244,6 +250,36 @@ function craftAxe() {
   saveGame();
 }
 
+function updateInventory() {
+  if (inventoryWood) {
+    inventoryWood.textContent = `Wood: ${world.wood}`;
+  }
+
+  if (inventoryStone) {
+    inventoryStone.textContent = `Stone: ${world.stone}`;
+  }
+
+  if (inventoryFood) {
+    inventoryFood.textContent = `Food: ${world.food}`;
+  }
+
+  if (inventoryAxe) {
+    inventoryAxe.hidden = !playerHasBasicAxe(getPlayer());
+  }
+}
+
+function toggleInventory() {
+  if (!inventoryPanel) {
+    return;
+  }
+
+  inventoryPanel.hidden = !inventoryPanel.hidden;
+
+  if (inventoryButton) {
+    inventoryButton.setAttribute("aria-expanded", String(!inventoryPanel.hidden));
+  }
+}
+
 function saveGame() {
   if (typeof localStorage === "undefined") {
     return;
@@ -342,6 +378,7 @@ function updateResourceCounters() {
 
   updateToolState();
   updateCraftAxeButton();
+  updateInventory();
 }
 
 function isColliding(entityA, entityB) {
@@ -751,6 +788,9 @@ function handleKeyDown(event) {
   } else if (key === "d") {
     input.d = true;
     event.preventDefault();
+  } else if (key === "i" && !event.repeat) {
+    toggleInventory();
+    event.preventDefault();
   }
 }
 
@@ -823,6 +863,10 @@ if (typeof window !== "undefined") {
       craftAxeButton.addEventListener("click", craftAxe);
     }
 
+    if (inventoryButton) {
+      inventoryButton.addEventListener("click", toggleInventory);
+    }
+
     if (closeDialogueButton) {
       closeDialogueButton.addEventListener("click", closeDialogue);
     }
@@ -854,6 +898,8 @@ if (typeof module !== "undefined" && module.exports) {
     closeDialogue,
     saveGame,
     loadGame,
-    updateResourceRegeneration
+    updateResourceRegeneration,
+    updateInventory,
+    toggleInventory
   };
 }
